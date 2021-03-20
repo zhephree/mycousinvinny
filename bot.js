@@ -235,14 +235,16 @@ function postStatus(params) {
   });
 }
 
-// below is setting the listening for incoming requests...
-app.get(`/${process.env.BOT_ENDPOINT}`, function(req, res) {
-  res.status(204).send();
-  getListings();
-});
+getListings();
 
-// ... and this listens for requests! :)
-const listener = app.listen(process.env.PORT, function() {
-  console.log("🤖 is 👂🏽 on port " + listener.address().port);
-});
+// below is setting the listening for incoming requests...
+// app.get(`/${process.env.BOT_ENDPOINT}`, function(req, res) {
+//   res.status(204).send();
+//   getListings();
+// });
+
+// // ... and this listens for requests! :)
+// const listener = app.listen(process.env.PORT, function() {
+//   console.log("🤖 is 👂🏽 on port " + listener.address().port);
+// });
 
