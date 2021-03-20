@@ -1,0 +1,33 @@
+{
+  "name": "is-vinny-on-tv",
+  "version": "1.0.0",
+  "description": "Is My Cousin Vinny on TV?",
+  "author": "Geoffrey Gauchet",
+  "license": "MIT",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "twit": "^2.2.11",
+    "express": "^4.16.4",
+    "dotenv": "^8.0.0"
+  },
+  "engines": {
+    "node": "8.x"
+  },
+  "repository": {
+    "url": "https://github.com/zhephree"
+  },
+  "keywords": [
+    "express",
+    "dotenv",
+    "node",
+    "glitch",
+    "twitter",
+    "twitterbot",
+    "bot",
+    "tv",
+    "API"
+  ]
+}
