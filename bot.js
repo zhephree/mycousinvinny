@@ -63,15 +63,30 @@ const getDateString = () => {
   return y + '-' + m + '-' + d;
 }
 
+const convertTime = (time) => { console.log("time",time)
+    var hours = Number(time.match(/^(\d+)/)[1]);
+    var minutes = Number(time.match(/:(\d+)/)[1]); console.log('mm', time.match(/\s(.*)$/))
+    // var AMPM = time.match(/\s(.*)$/)[1];
+    if(time.indexOf('pm') > -1 && hours<12) hours = hours+12;
+    if(time.indexOf('am') > -1 && hours==12) hours = hours-12;
+    var sHours = hours.toString();
+    var sMinutes = minutes.toString();
+    if(hours<10) sHours = "0" + sHours;
+    if(minutes<10) sMinutes = "0" + sMinutes;
+    return sHours + ":" + sMinutes;
+}
+
 const testTime = (start, end) => {
   let now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Chicago"}))
-
-  
-  let startDate = new Date(getDateString() + ' ' + start).getTime();
-  let endDate = new Date(getDateString() + ' ' + end).getTime();
+console.log(now.getHours(), start, end)
+  console.log(getDateString() + ' ' + convertTime(start))
+  let startDate = new Date(getDateString() + ' ' + convertTime(start)).getTime();
+  let endDate = new Date(getDateString() + ' ' + convertTime(end)).getTime();
   if(start.indexOf('pm') > -1 && end.indexOf('am') > -1){
     endDate = endDate + 86400000;
   }
+
+  console.log(now.getTime(), startDate, endDate)
   
   if(now.getTime() >= startDate && now.getTime() < endDate){
     return true;
@@ -135,7 +150,7 @@ const getListings = () => {
           console.log('My Cousin Vinny will be on at ' + stime);
         }else{
           console.log('My Cousin Vinny ended at ' + etime);
-          postStatus({status: 'My Cousin Vinny ended at ' + etime})
+        //   postStatus({status: 'My Cousin Vinny ended at ' + etime})
         }
       })
       
