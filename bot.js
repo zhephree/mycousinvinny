@@ -1,11 +1,18 @@
+/*
+ * My COusin Vinny Checker
+ * Geoffrey Gauchet / geoffreygauchet.com
+ * this stuopid thing checks to see if the incredible film My Cousin Vinny
+ * is on some TV channel right now and if so, it tweets it.
+ * a less person would've turned this into a class with methods or whatever
+ * but this is just a bunch of code that pollutes the global scope to do one
+ * very specific thing.
+*/
 require("dotenv").config();
-const express = require("express");
-const app = express();
-
 const Twit = require("twit");
 const request = require("request");
-const fs = require("fs");
-const path = require("path");
+
+//Set this to true to turn on the console logs and to turn off twitter posting
+const test = true;
 
 // this will check the keys and tokens saved in your .env file. you can get the keys/tokens from http://developer.twitter.com/en/apps
 const bot = new Twit({
@@ -16,26 +23,28 @@ const bot = new Twit({
   strictSSL: true
 });
 
-// homepage
+//this is a wrapper for console.log() and has a stupid Zelda reference for a name
+const heyListen = (...args) => {
+    if(test === true){
+        args.splice(0, 0, '🪓')
+        console.log.apply(this, args);
+    }
+}
 
-app.get("/", function(req, res) {
-  var responseText = `<HTML><body style="background-color:#f8cc07;"></body><CENTER><a href="https://glitch.com/edit/#!/dailynasa?path=README.md:1:0" target="_blank"><img src="https://cdn.glitch.com/16911c91-6069-466c-8c5b-b930c5c622d4%2Fnasa_bot_image.png?v=1565634863542" alt="NASA Bot" style="width:px;height:400px;"></a></CENTER></HTML>`;
-  res.send(responseText);
-});
-
-//get tvperiod
-
+/*OnTVTonight breaks the schedule down into 4 arbitrary time periods. 
+ * This uses the current time to figure out the time period.
+ * "tHe TiMe ZoNe Is HaRdCoDeD" yeah this is a dumb app. change it in your fork
+ * `Early` is 12:00am to 5:59am
+ * `Morning` is 6:00am to 11:59pm
+ * `Afternnon` is 12:00pm to 5:59pm
+ * `Night` is 6:00pm to 11:59pm
+ */
 const getTVPeriod = () => {
   let now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Chicago"}))
   let hour = now.getHours();
   let min = now.getMinutes();
   
-  console.log('time', hour, min)
-  
-  if(hour < 0) {
-    hour = 24 + hour;
-    console.log('new time', hour, min)
-  }
+  heyListen('time', hour, min)
   
   if(hour >= 0 && hour < 6){
     return 'Early';
@@ -48,6 +57,10 @@ const getTVPeriod = () => {
   }
 }
 
+/*
+ * This just takes the current date and puts it into YYYY-MM-DD format
+ * 100% guarantee there's a better way to do this
+ */
 const getDateString = () => {
   let now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Chicago"}));
   let y = now.getFullYear();
@@ -63,10 +76,12 @@ const getDateString = () => {
   return y + '-' + m + '-' + d;
 }
 
-const convertTime = (time) => { console.log("time",time)
+//this takes a string like "10:30 pm" and converts it to a 24hour time string like "22:30"
+const convertTime = (time) => { 
+    heyListen("time",time)
     var hours = Number(time.match(/^(\d+)/)[1]);
-    var minutes = Number(time.match(/:(\d+)/)[1]); console.log('mm', time.match(/\s(.*)$/))
-    // var AMPM = time.match(/\s(.*)$/)[1];
+    var minutes = Number(time.match(/:(\d+)/)[1]); 
+    heyListen('mm', time.match(/\s(.*)$/))
     if(time.indexOf('pm') > -1 && hours<12) hours = hours+12;
     if(time.indexOf('am') > -1 && hours==12) hours = hours-12;
     var sHours = hours.toString();
@@ -76,18 +91,34 @@ const convertTime = (time) => { console.log("time",time)
     return sHours + ":" + sMinutes;
 }
 
+/*
+ * This takes a start and end time in the "HH:MM ap" format
+ * and determines if the actual current time falls between them
+ */
 const testTime = (start, end) => {
   let now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Chicago"}))
-console.log(now.getHours(), start, end)
-  console.log(getDateString() + ' ' + convertTime(start))
+  heyListen(now.getHours(), start, end)
+  heyListen(getDateString() + ' ' + convertTime(start))
   let startDate = new Date(getDateString() + ' ' + convertTime(start)).getTime();
   let endDate = new Date(getDateString() + ' ' + convertTime(end)).getTime();
+
+  //sometimes it'll start at like 11pm and end at 2am, so this
+  //handles that case so the 2am is for the next day
+  //it's a very lazy way of handling this, but it's fine
   if(start.indexOf('pm') > -1 && end.indexOf('am') > -1){
     endDate = endDate + 86400000;
   }
 
-  console.log(now.getTime(), startDate, endDate)
+  heyListen(now.getTime(), startDate, endDate)
   
+  /* this isn't great, but if the NOW time is between START and END
+   * then MCV is on right now, so return true.
+   * if NOW is less than the START, then MCV is coming on soon, but isn't on right now, return 1
+   * if NOW isn't inbetween START and END, return false
+   * i really only doe anything important with the TRUE value.
+   * the otthers are just tthere in case i ever make like a web page or an API or sometthing
+   * sorry about the extra Ts my macbook keyboard has the keyboard problem
+   */
   if(now.getTime() >= startDate && now.getTime() < endDate){
     return true;
   }else if(now.getTime() < startDate){
@@ -97,20 +128,30 @@ console.log(now.getHours(), start, end)
   }
 }
 
+//OnTVTonight returns the HTML in a cslash escaped string and this very
+//lazily just removes all \ out of the string which for our purposes is fine
 function stripslashes(str) {
- // return str.replace(/\\'/g,'\'').replace(/\"/g,'"').replace(/\\\\/g,'\\').replace(/\\0/g,'\0');
   return str.replace(/\\/g, '')
 }
 
+/*
+ * oooh baby this is it. this is where the magic happens and then Penn & Teller poke holes in it
+ * the gist is that it hits a URL that they use to AJAXily load the table's HTML
+ * and this takes that HTML and parses it to find out if and when MCV is on
+ * and if it is on, then it gets the URL for that time slot to find out the
+ * end time for this airing and does the functions up above to math it out
+ * and eventually tweet or not tweet
+ */
 const getListings = () => {
   let period = getTVPeriod();
   let date = getDateString();
   let url = 'https://www.ontvtonight.com//guide/schedule?provider=X341764965&zipcode=70122&TVperiod=' + period + '&date=' + date + '&st=0&static_page=0';
- console.log('url', url)
+  heyListen('url', url)
+  
   request.get({
     url: url
   }, (err, response, body) => {
-    console.log('ok', err)
+    heyListen('ok', err)
     body = stripslashes(JSON.parse(JSON.stringify(body)))
     let vinDex = body.toLowerCase().indexOf('my cousin vinny');
     if(vinDex > -1){
@@ -121,7 +162,7 @@ const getListings = () => {
       let channelName = channel[1].match(/>(.*?)</)[1];
       let vinnyFragment = body.substr(vinDex, 200);
       let time = vinnyFragment.match(/tvtime">(.*?)<\/span/)
-      console.log('time', time[1])
+      heyListen('time', time[1])
       let urlStart = body.lastIndexOf('href="', vinDex);
       let urlFragment = body.substr(urlStart, 300);
       let urlMatches = urlFragment.match(/href="(.*?)" target/)
@@ -132,134 +173,44 @@ const getListings = () => {
       }, (err, response, body) => {
         body = JSON.parse(JSON.stringify(body))
         let timeMatches = body.match(/<h5 class="thin">\n?(.*?)\n/m)[1].trim()
-        console.log('time matches', timeMatches)
+        heyListen('time matches', timeMatches)
         let etimeStart = timeMatches.indexOf('- ') + 2;
         let etimeEnd = timeMatches.indexOf(' |');
         let etime = timeMatches.substring(etimeStart, etimeEnd).replace(' ', '')
-        console.log('end time', etime)
+        heyListen('end time', etime)
         let stimeStart = 0;
         let stimeEnd = etimeStart - 2;
         let stime = timeMatches.substring(stimeStart, stimeEnd).replace(' ', '')
-        console.log('start time', stime)
+        heyListen('start time', stime)
         
         let tt = testTime(stime, etime);
         if(tt === true){
-          console.log('My Cousin Vinny is on ' + channelName);
-          postStatus({status: 'My Cousin Vinny is on ' + channelName})
+          heyListen('My Cousin Vinny is on ' + channelName);
+          if(!test) {
+              postStatus({status: 'My Cousin Vinny is on ' + channelName})
+          }
         }else if(tt === 1){
-          console.log('My Cousin Vinny will be on at ' + stime);
+          heyListen('My Cousin Vinny will be on at ' + stime + ' on ' + channelName);
         }else{
-          console.log('My Cousin Vinny ended at ' + etime);
-        //   postStatus({status: 'My Cousin Vinny ended at ' + etime})
+          heyListen('My Cousin Vinny ended at ' + etime + ' on ' + channelName);
         }
       })
-      
-      
     }else{
-      console.log('My Cousin Vinny is not on right now');
+      heyListen('My Cousin Vinny is not on right now');
     }
   })
 }
 
-
-
-
-// const os = require("os");
-// const tmpDir = os.tmpdir();
-
-// // this will call the NASA API
-
-// const getPhoto = () => {
-//   const parameters = {
-//     url: "",
-//     qs: {
-//       api_key: process.env.NASA_KEY
-//     },
-//     encoding: "binary"
-//   };
-//   request.get(parameters, (err, respone, body) => {
-//     body = JSON.parse(body);
-//     saveFile(body);
-//   });
-// };
-
-// // the section below checks if this is a video or image. the NASA API provides images and video URLs
-// // if it's an image, it will save to the temporary directory, and in the case it's a video, we will save the URL to the video
-
-// function saveFile(body) {
-//   const fileName =
-//     body.media_type.indexOf("image") != -1 ? "nasa.jpg" : "nasa.mp4";
-//   const filePath = path.join(tmpDir + `/${fileName}`);
-
-//   console.log(`saveFile: file PATH ${filePath}`);
-//   if (fileName === "nasa.mp4") {
-//     // tweet the link
-//     const params = {
-//       status: "Video time! 🍿 " + body.title + ": " + body.url
-//     };
-//     postStatus(params);
-//     return;
-//   }
-//   const file = fs.createWriteStream(filePath);
-
-//   request(body)
-//     .pipe(file)
-//     .on("close", err => {
-//       if (err) {
-//         console.log(err);
-//       } else {
-//         console.log("Media saved!");
-//         const descriptionText = body.title;
-//         uploadMedia(descriptionText, filePath);
-//       }
-//     });
-// }
-
-// // the section below uploads the NASA image to Twitter and returns a media ID
-
-// function uploadMedia(descriptionText, fileName) {
-//   console.log(`uploadMedia: file PATH ${fileName}`);
-//   bot.postMediaChunked(
-//     {
-//       file_path: fileName
-//     },
-//     (err, data, respone) => {
-//       if (err) {
-//         console.log(err);
-//       } else {
-//         console.log(data);
-//         const params = {
-//           status: descriptionText,
-//           media_ids: data.media_id_string
-//         };
-//         postStatus(params);
-//       }
-//     }
-//   );
-// }
-
-// // the section below Tweets the media ID and sends a Tweet including the title
-
+// this does some tweeting
 function postStatus(params) {
   bot.post("statuses/update", params, (err, data, respone) => {
     if (err) {
-      console.log(err);
+      heyListen(err);
     } else {
-      console.log("Status posted on Twitter!!");
+      heyListen("Status posted on Twitter!!");
     }
   });
 }
 
+//run the main guy. this app is designed to run, do its shit, and then get outta here
 getListings();
-
-// below is setting the listening for incoming requests...
-// app.get(`/${process.env.BOT_ENDPOINT}`, function(req, res) {
-//   res.status(204).send();
-//   getListings();
-// });
-
-// // ... and this listens for requests! :)
-// const listener = app.listen(process.env.PORT, function() {
-//   console.log("🤖 is 👂🏽 on port " + listener.address().port);
-// });
-
