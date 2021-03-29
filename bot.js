@@ -12,7 +12,11 @@ const Twit = require("twit");
 const request = require("request");
 
 //Set this to true to turn on the console logs and to turn off twitter posting
-const test = false;
+const test = true;
+const alwaysLog = true;
+
+console.log('hello')
+console.log('env', process.env.CONSUMER_KEY,process.env.CONSUMER_SECRET,process.env.ACCESS_TOKEN,process.env.ACCESS_TOKEN_SECRET)
 
 // this will check the keys and tokens saved in your .env file. you can get the keys/tokens from http://developer.twitter.com/en/apps
 const bot = new Twit({
@@ -25,7 +29,7 @@ const bot = new Twit({
 
 //this is a wrapper for console.log() and has a stupid Zelda reference for a name
 const heyListen = (...args) => {
-    if(test === true){
+    if(test === true || alwaysLog === true){
         args.splice(0, 0, '🪓')
         console.log.apply(this, args);
     }
