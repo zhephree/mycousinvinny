@@ -12,7 +12,7 @@ const Twit = require("twit");
 const request = require("request");
 
 //Set this to true to turn on the console logs and to turn off twitter posting
-const test = true;
+const test = false;
 const alwaysLog = true;
 
 console.log('hello')
